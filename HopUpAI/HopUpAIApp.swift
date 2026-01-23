@@ -12,7 +12,12 @@ import SwiftData
 struct HopUpAIApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Exercise.self,
+            Workout.self,
+            WorkoutExercise.self,
+            WorkoutSession.self,
+            ExerciseLog.self,
+            UserProfile.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

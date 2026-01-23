@@ -7,55 +7,60 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
+/// Root view with tab-based navigation
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    @State private var selectedTab = 0
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
+        TabView(selection: $selectedTab) {
+            DashboardView()
+                .tabItem {
+                    Label("Dashboard", systemImage: "house.fill")
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+                .tag(0)
+            
+            ExerciseListView()
+                .tabItem {
+                    Label("Exercises", systemImage: "figure.basketball")
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
+                .tag(1)
+            
+            WorkoutListView()
+                .tabItem {
+                    Label("Workouts", systemImage: "clipboard.fill")
                 }
-            }
-        } detail: {
-            Text("Select an item")
+                .tag(2)
+            
+            ProgressView()
+                .tabItem {
+                    Label("Progress", systemImage: "chart.bar.fill")
+                }
+                .tag(3)
         }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
+        .tint(AppColors.basketball)
+        .preferredColorScheme(.dark)
+        .onAppear {
+            // Configure tab bar appearance
+            let appearance = UITabBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = UIColor(AppColors.court)
+            
+            UITabBar.appearance().standardAppearance = appearance
+            UITabBar.appearance().scrollEdgeAppearance = appearance
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: [
+            Exercise.self,
+            Workout.self,
+            WorkoutExercise.self,
+            WorkoutSession.self,
+            ExerciseLog.self,
+            UserProfile.self
+        ], inMemory: true)
 }
