@@ -141,7 +141,7 @@ struct SettingsView: View {
                         .padding(.top, 16)
                         
                         Divider()
-                            .background(AppColors.courtLine)
+                            .background(AppColors.courtLines)
                         
                         // Sync now button
                         Button {
@@ -167,7 +167,7 @@ struct SettingsView: View {
                         .disabled(isSyncing)
                         
                         Divider()
-                            .background(AppColors.courtLine)
+                            .background(AppColors.courtLines)
                         
                         // Sign out button
                         Button {
@@ -250,7 +250,7 @@ struct SettingsView: View {
                 SettingsRow(icon: "info.circle", title: "Version", value: "1.0.0")
                 
                 Divider()
-                    .background(AppColors.courtLine)
+                    .background(AppColors.courtLines)
                 
                 SettingsRow(icon: "hammer", title: "Build", value: "1")
             }
@@ -274,8 +274,7 @@ struct SettingsView: View {
             
             isSigningIn = true
             
-            // Get user info
-            let email = appleIDCredential.email
+            // Get user info for local profile
             var displayName: String?
             if let fullName = appleIDCredential.fullName {
                 let formatter = PersonNameComponentsFormatter()
@@ -290,12 +289,15 @@ struct SettingsView: View {
                 do {
                     let response = try await APIService.shared.signInWithApple(
                         identityToken: identityTokenString,
-                        email: email,
-                        displayName: displayName
+                        userAppleId: appleIDCredential.user
                     )
                     
-                    AuthenticationService.shared.saveToken(response.token)
-                    AuthenticationService.shared.saveCurrentUserID(response.user.id)
+                    if let token = response.token {
+                        AuthenticationService.shared.saveToken(token)
+                    }
+                    if let userId = response.user?.id {
+                        AuthenticationService.shared.saveCurrentUserID(userId)
+                    }
                     
                     // Update local profile if we got a name
                     if let name = displayName, !name.isEmpty, let profile = profile {
