@@ -23,10 +23,29 @@ struct DashboardView: View {
         profiles.first
     }
     
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<12: return "Good morning"
+        case 12..<17: return "Good afternoon"
+        case 17..<21: return "Good evening"
+        default: return "Hey there"
+        }
+    }
+    
+    private var displayName: String {
+        let name = UserDefaults.standard.string(forKey: "userDisplayName") ?? profile?.displayName ?? "Player"
+        // Get first name only
+        return name.components(separatedBy: " ").first ?? name
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 32) {
+                    // Greeting
+                    greetingSection
+                    
                     // Hero section with level
                     heroSection
                     
@@ -43,8 +62,7 @@ struct DashboardView: View {
                 .padding(.bottom, 100)
             }
             .background(AppColors.background.ignoresSafeArea())
-            .navigationTitle("Dashboard")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .onAppear {
                 ensureProfile()
@@ -70,6 +88,25 @@ struct DashboardView: View {
                 NewWorkoutView()
             }
         }
+    }
+    
+    // MARK: - Greeting Section
+    
+    private var greetingSection: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(greeting + ",")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(AppColors.textSecondary)
+                
+                Text(displayName)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+            }
+            
+            Spacer()
+        }
+        .padding(.top, 8)
     }
     
     // MARK: - Hero Section

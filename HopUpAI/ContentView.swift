@@ -9,9 +9,36 @@ import SwiftUI
 import SwiftData
 import UIKit
 
-/// Root view with tab-based navigation
+/// Root view - shows sign in or main app based on auth state
 struct ContentView: View {
+    @State private var isAuthenticated = AuthenticationService.shared.isUserAuthenticated()
+    
+    var body: some View {
+        Group {
+            if isAuthenticated {
+                MainTabView(isAuthenticated: $isAuthenticated)
+            } else {
+                SignInView(isAuthenticated: $isAuthenticated)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: isAuthenticated)
+    }
+}
+
+/// Main tab-based navigation
+struct MainTabView: View {
+    @Binding var isAuthenticated: Bool
     @State private var selectedTab = 0
+    @Query private var profiles: [UserProfile]
+    
+    private var profile: UserProfile? {
+        profiles.first
+    }
+    
+    private var userInitial: String {
+        let name = UserDefaults.standard.string(forKey: "userDisplayName") ?? profile?.displayName ?? "U"
+        return String(name.prefix(1)).uppercased()
+    }
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -39,9 +66,9 @@ struct ContentView: View {
                 }
                 .tag(3)
             
-            SettingsView()
+            SettingsView(isAuthenticated: $isAuthenticated)
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
+                    Label("Profile", systemImage: "person.crop.circle.fill")
                 }
                 .tag(4)
         }
