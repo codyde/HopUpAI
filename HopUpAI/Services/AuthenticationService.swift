@@ -53,7 +53,12 @@ final class AuthenticationService: NSObject, ASAuthorizationControllerDelegate {
     func signInWithApple() async throws -> AuthResult {
         return try await withCheckedThrowingContinuation { continuation in
             self.authCompletion = { result in
-                continuation.resume(returning: result)
+                switch result {
+                case .success(let authResult):
+                    continuation.resume(returning: authResult)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
             }
             
             let request = ASAuthorizationAppleIDProvider().createRequest()
@@ -140,7 +145,7 @@ extension AuthenticationService: ASAuthorizationControllerPresentationContextPro
         case let appleIDCredential as ASAuthorizationAppleIDCredential:
             authenticationCompleted(with: appleIDCredential)
             
-        @unknown default:
+        default:
             authCompletion?(.failure(AuthError.unsupportedCredential))
         }
     }
