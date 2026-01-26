@@ -17,6 +17,8 @@ final class WorkoutSession {
     var startedAt: Date
     var completedAt: Date?
     var totalXPEarned: Int
+    var updatedAt: Date
+    var needsSync: Bool
     
     // MARK: - Relationships
     
@@ -74,6 +76,8 @@ final class WorkoutSession {
         self.startedAt = Date()
         self.completedAt = nil
         self.totalXPEarned = 0
+        self.updatedAt = Date()
+        self.needsSync = false
     }
 }
 

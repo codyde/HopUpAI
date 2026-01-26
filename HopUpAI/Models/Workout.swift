@@ -17,6 +17,8 @@ final class Workout {
     var name: String
     var workoutDescription: String?
     var createdAt: Date
+    var updatedAt: Date
+    var needsSync: Bool
     
     // MARK: - Relationships
     
@@ -26,11 +28,42 @@ final class Workout {
     @Relationship(deleteRule: .cascade, inverse: \WorkoutSession.workout)
     var sessions: [WorkoutSession]?
     
-    // MARK: - Computed Properties
+    // MARK: - Initialization
     
-    /// Get exercises sorted by their order
-    var sortedExercises: [WorkoutExercise] {
-        (exercises ?? []).sorted { $0.sortOrder < $1.sortOrder }
+    init(
+        name: String,
+        workoutDescription: String? = nil
+    ) {
+        self.id = UUID()
+        self.name = name
+        self.workoutDescription = workoutDescription
+        self.createdAt = Date()
+        self.updatedAt = Date()
+        self.needsSync = false
+    }
+}
+
+// MARK: - Display Helpers
+
+extension Workout {
+    /// Formatted exercise count text
+    var exerciseCountText: String {
+        let count = exerciseCount
+        return count == 1 ? "1 exercise" : "\(count) exercises"
+    }
+    
+    /// Formatted duration text
+    var durationText: String {
+        let mins = estimatedDuration
+        if mins >= 60 {
+            let hours = mins / 60
+            let remainingMins = mins % 60
+            if remainingMins > 0 {
+                return "\(hours)h \(remainingMins)m"
+            }
+            return "\(hours) hour\(hours > 1 ? "s" : "")"
+        }
+        return "\(mins) min"
     }
     
     /// Total number of exercises in this workout
@@ -58,40 +91,9 @@ final class Workout {
             .first?.completedAt
     }
     
-    // MARK: - Initialization
-    
-    init(
-        name: String,
-        workoutDescription: String? = nil
-    ) {
-        self.id = UUID()
-        self.name = name
-        self.workoutDescription = workoutDescription
-        self.createdAt = Date()
-    }
-}
-
-// MARK: - Display Helpers
-
-extension Workout {
-    /// Formatted exercise count text
-    var exerciseCountText: String {
-        let count = exerciseCount
-        return count == 1 ? "1 exercise" : "\(count) exercises"
-    }
-    
-    /// Formatted duration text
-    var durationText: String {
-        let mins = estimatedDuration
-        if mins >= 60 {
-            let hours = mins / 60
-            let remainingMins = mins % 60
-            if remainingMins > 0 {
-                return "\(hours)h \(remainingMins)m"
-            }
-            return "\(hours) hour\(hours > 1 ? "s" : "")"
-        }
-        return "\(mins) min"
+    /// Get exercises sorted by their order
+    var sortedExercises: [WorkoutExercise] {
+        (exercises ?? []).sorted { $0.sortOrder < $1.sortOrder }
     }
     
     /// Summary of exercise types in this workout

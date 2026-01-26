@@ -335,7 +335,7 @@ struct ActiveWorkoutView: View {
         
         // Update profile
         if let profile = profile {
-            let result = profile.addXP(totalXPEarned)
+            _ = profile.addXP(totalXPEarned)
             profile.updateStreak()
             profile.totalWorkoutsCompleted += 1
         }

@@ -26,6 +26,8 @@ final class Exercise {
     var defaultDuration: Int?  // In seconds
     
     var createdAt: Date
+    var updatedAt: Date
+    var needsSync: Bool
     
     // MARK: - Relationships
     
@@ -59,6 +61,8 @@ final class Exercise {
         self.defaultWeight = defaultWeight
         self.defaultDuration = defaultDuration
         self.createdAt = Date()
+        self.updatedAt = Date()
+        self.needsSync = false
     }
 }
 
