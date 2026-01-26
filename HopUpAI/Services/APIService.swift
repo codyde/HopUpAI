@@ -104,11 +104,8 @@ final class APIService {
     private var authToken: String?
     
     private init() {
-        #if DEBUG
-        self.baseURL = "http://localhost:3001/api/v1"
-        #else
-        self.baseURL = "https://hopupai-api.up.railway.app/api/v1"
-        #endif
+        // Use Railway backend for all builds
+        self.baseURL = "https://hopup-api.up.railway.app/api/v1"
     }
     
     func setAuthToken(_ token: String) {
