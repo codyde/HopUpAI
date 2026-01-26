@@ -269,6 +269,7 @@ final class SyncService {
 }
 
 extension ModelContext {
+    @MainActor
     static let shared: ModelContext = {
         let schema = Schema([
             Exercise.self,
