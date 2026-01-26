@@ -41,11 +41,12 @@ final class AuthenticationService: NSObject, ASAuthorizationControllerDelegate {
     
     private override init() {
         super.init()
-        ASAuthorizationAppleIDProvider().getCredentialState(
-            forUserID: UserDefaults.standard.string(forKey: "appleUserID") ?? ""
-        ) { credentialState, error in
-            if let error = error {
-                print("Error getting credential state: \(error)")
+        // Only check credential state if we have a saved user ID
+        if let appleUserID = UserDefaults.standard.string(forKey: "appleUserID"), !appleUserID.isEmpty {
+            ASAuthorizationAppleIDProvider().getCredentialState(forUserID: appleUserID) { credentialState, error in
+                if let error = error {
+                    print("Error getting credential state: \(error)")
+                }
             }
         }
     }
