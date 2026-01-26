@@ -17,8 +17,8 @@ final class Workout {
     var name: String
     var workoutDescription: String?
     var createdAt: Date
-    var updatedAt: Date
-    var needsSync: Bool
+    var updatedAt: Date = Date()
+    var needsSync: Bool = false
     
     // MARK: - Relationships
     

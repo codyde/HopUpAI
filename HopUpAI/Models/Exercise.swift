@@ -26,8 +26,8 @@ final class Exercise {
     var defaultDuration: Int?  // In seconds
     
     var createdAt: Date
-    var updatedAt: Date
-    var needsSync: Bool
+    var updatedAt: Date = Date()
+    var needsSync: Bool = false
     
     // MARK: - Relationships
     

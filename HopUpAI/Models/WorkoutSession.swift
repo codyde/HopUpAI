@@ -17,8 +17,8 @@ final class WorkoutSession {
     var startedAt: Date
     var completedAt: Date?
     var totalXPEarned: Int
-    var updatedAt: Date
-    var needsSync: Bool
+    var updatedAt: Date = Date()
+    var needsSync: Bool = false
     
     // MARK: - Relationships
     
