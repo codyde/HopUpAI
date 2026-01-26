@@ -164,7 +164,7 @@ final class SyncService {
                 }
                 existing.defaultSets = apiExercise.defaultSets
                 existing.defaultReps = apiExercise.defaultReps
-                existing.defaultWeight = apiExercise.defaultWeight
+                existing.defaultWeight = apiExercise.defaultWeight.map { Double($0) }
                 existing.defaultDuration = apiExercise.defaultDuration
                 existing.updatedAt = serverDate
                 existing.needsSync = false
@@ -177,7 +177,7 @@ final class SyncService {
                 type: ExerciseType(rawValue: apiExercise.type) ?? .bodyweight,
                 defaultSets: apiExercise.defaultSets,
                 defaultReps: apiExercise.defaultReps,
-                defaultWeight: apiExercise.defaultWeight,
+                defaultWeight: apiExercise.defaultWeight.map { Double($0) },
                 defaultDuration: apiExercise.defaultDuration
             )
             newExercise.id = uuid
@@ -229,7 +229,8 @@ final class SyncService {
         if let existing = try modelContext.fetch(descriptor).first {
             let serverCompleted = apiSession.completedAt.flatMap { ISO8601DateFormatter().date(from: $0) }
             
-            if !existing.completedAt || (existing.completedAt ?? Date()) > (serverCompleted ?? Date()) {
+            // Update if local has no completion date, or server completion is newer
+            if existing.completedAt == nil || (serverCompleted != nil && existing.completedAt! < serverCompleted!) {
                 if let serverCompleted = serverCompleted {
                     existing.completedAt = serverCompleted
                     existing.totalXPEarned = apiSession.totalXPEarned
