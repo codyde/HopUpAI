@@ -38,6 +38,12 @@ struct ContentView: View {
                     Label("Progress", systemImage: "chart.bar.fill")
                 }
                 .tag(3)
+            
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape.fill")
+                }
+                .tag(4)
         }
         .tint(AppColors.basketball)
         .preferredColorScheme(.dark)
