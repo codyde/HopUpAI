@@ -42,7 +42,7 @@ struct HopUpAIApp: App {
             if newPhase == .active {
                 // Process any offline queue items when app becomes active
                 Task {
-                    await OfflineQueue.shared.processQueue()
+                    try? await OfflineQueue.shared.processQueue()
                 }
             }
         }
@@ -54,7 +54,7 @@ struct HopUpAIApp: App {
         
         Task {
             // Process offline queue first
-            await OfflineQueue.shared.processQueue()
+            try? await OfflineQueue.shared.processQueue()
             
             // Then perform full sync
             // Note: Full SyncService.shared.performFullSync() would go here
