@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AuthenticationServices
+import UIKit
 
 struct SignInView: View {
     @Environment(\.modelContext) private var modelContext
@@ -114,16 +115,12 @@ struct SignInView: View {
                 
                 // Sign in section
                 VStack(spacing: 16) {
-                    SignInWithAppleButton(.signIn) { request in
-                        request.requestedScopes = [.fullName, .email]
-                    } onCompletion: { result in
+                    // Custom Sign In with Apple button to avoid constraint issues
+                    SignInWithAppleButtonView(isSigningIn: isSigningIn) { result in
                         handleSignInResult(result)
                     }
-                    .signInWithAppleButtonStyle(.white)
                     .frame(height: 56)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
                     .shadow(color: .white.opacity(0.1), radius: 10, y: 5)
-                    .disabled(isSigningIn)
                     .overlay {
                         if isSigningIn {
                             RoundedRectangle(cornerRadius: 14)
@@ -340,6 +337,64 @@ struct BasketballLines: Shape {
         )
         
         return path
+    }
+}
+
+// MARK: - Sign In With Apple Button Wrapper
+
+/// Custom wrapper to avoid Auto Layout constraint conflicts
+struct SignInWithAppleButtonView: UIViewRepresentable {
+    let isSigningIn: Bool
+    let onCompletion: (Result<ASAuthorization, Error>) -> Void
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onCompletion: onCompletion)
+    }
+    
+    func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
+        let button = ASAuthorizationAppleIDButton(type: .signIn, style: .white)
+        button.cornerRadius = 14
+        button.addTarget(context.coordinator, action: #selector(Coordinator.handleTap), for: .touchUpInside)
+        return button
+    }
+    
+    func updateUIView(_ uiView: ASAuthorizationAppleIDButton, context: Context) {
+        uiView.isEnabled = !isSigningIn
+        uiView.alpha = isSigningIn ? 0.6 : 1.0
+    }
+    
+    class Coordinator: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+        let onCompletion: (Result<ASAuthorization, Error>) -> Void
+        
+        init(onCompletion: @escaping (Result<ASAuthorization, Error>) -> Void) {
+            self.onCompletion = onCompletion
+        }
+        
+        @objc func handleTap() {
+            let request = ASAuthorizationAppleIDProvider().createRequest()
+            request.requestedScopes = [.fullName, .email]
+            
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = self
+            controller.presentationContextProvider = self
+            controller.performRequests()
+        }
+        
+        func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let window = windowScene.windows.first else {
+                return UIWindow()
+            }
+            return window
+        }
+        
+        func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+            onCompletion(.success(authorization))
+        }
+        
+        func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+            onCompletion(.failure(error))
+        }
     }
 }
 
