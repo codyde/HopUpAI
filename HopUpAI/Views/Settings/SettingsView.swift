@@ -31,15 +31,16 @@ struct SettingsView: View {
         String(displayName.prefix(1)).uppercased()
     }
     
+    private var profileImageUrl: String? {
+        UserDefaults.standard.string(forKey: "userProfileImageUrl")
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
                     // Profile header
                     profileHeader
-                    
-                    // Stats section
-                    statsSection
                     
                     // Cloud sync section
                     cloudSyncSection
@@ -68,26 +69,60 @@ struct SettingsView: View {
         }
     }
     
+    // MARK: - Profile Initial View
+    
+    private var profileInitialView: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.basketball, AppColors.basketballDark],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 100, height: 100)
+                .shadow(color: AppColors.basketball.opacity(0.4), radius: 15, y: 5)
+            
+            Text(userInitial)
+                .font(.system(size: 44, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+        }
+    }
+    
     // MARK: - Profile Header
     
     private var profileHeader: some View {
         VStack(spacing: 16) {
             // Large avatar
             ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [AppColors.basketball, AppColors.basketballDark],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 100, height: 100)
+                if let imageUrlString = profileImageUrl,
+                   let imageUrl = URL(string: imageUrlString) {
+                    AsyncImage(url: imageUrl) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 100, height: 100)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle()
+                                        .stroke(AppColors.basketball, lineWidth: 3)
+                                )
+                        case .failure(_):
+                            profileInitialView
+                        case .empty:
+                            ProgressView()
+                                .frame(width: 100, height: 100)
+                        @unknown default:
+                            profileInitialView
+                        }
+                    }
                     .shadow(color: AppColors.basketball.opacity(0.4), radius: 15, y: 5)
-                
-                Text(userInitial)
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                } else {
+                    profileInitialView
+                }
             }
             
             // Name and level
@@ -121,41 +156,6 @@ struct SettingsView: View {
             .clipShape(Capsule())
         }
         .padding(.vertical, 24)
-    }
-    
-    // MARK: - Stats Section
-    
-    private var statsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Statistics")
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
-            
-            if let profile = profile {
-                HStack(spacing: 12) {
-                    ProfileStatCard(
-                        icon: "flame.fill",
-                        value: "\(profile.totalXP)",
-                        label: "Total XP",
-                        color: AppColors.basketball
-                    )
-                    
-                    ProfileStatCard(
-                        icon: "trophy.fill",
-                        value: "\(profile.totalWorkoutsCompleted)",
-                        label: "Workouts",
-                        color: AppColors.gold
-                    )
-                    
-                    ProfileStatCard(
-                        icon: "flame",
-                        value: "\(profile.longestStreak)",
-                        label: "Best Streak",
-                        color: AppColors.fire
-                    )
-                }
-            }
-        }
     }
     
     // MARK: - Cloud Sync Section
@@ -192,29 +192,32 @@ struct SettingsView: View {
                 }
                 .padding(16)
                 
-                Divider()
-                    .background(AppColors.courtLines)
+                Rectangle()
+                    .fill(AppColors.courtLines)
+                    .frame(height: 1)
                 
                 // Sync now button
                 Button {
                     syncNow()
                 } label: {
-                    HStack {
-                        if isSyncing {
-                            ProgressView()
-                                .tint(AppColors.basketball)
-                                .scaleEffect(0.8)
-                        } else {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(.system(size: 16))
-                        }
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 16))
+                            .opacity(isSyncing ? 0 : 1)
+                            .overlay {
+                                if isSyncing {
+                                    ProgressView()
+                                        .tint(AppColors.basketball)
+                                        .scaleEffect(0.8)
+                                }
+                            }
                         
                         Text(isSyncing ? "Syncing..." : "Sync Now")
                             .font(.system(size: 15, weight: .medium))
                     }
                     .foregroundStyle(AppColors.basketball)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .frame(height: 48)
                 }
                 .disabled(isSyncing)
             }
@@ -282,36 +285,9 @@ struct SettingsView: View {
     private func signOut() {
         AuthenticationService.shared.clearToken()
         UserDefaults.standard.removeObject(forKey: "userDisplayName")
+        UserDefaults.standard.removeObject(forKey: "userProfileImageUrl")
+        UserDefaults.standard.removeObject(forKey: "isProfileComplete")
         isAuthenticated = false
-    }
-}
-
-// MARK: - Profile Stat Card
-
-struct ProfileStatCard: View {
-    let icon: String
-    let value: String
-    let label: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundStyle(color)
-            
-            Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.textPrimary)
-            
-            Text(label)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(AppColors.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(AppColors.court)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 

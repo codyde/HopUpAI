@@ -12,16 +12,28 @@ import UIKit
 /// Root view - shows sign in or main app based on auth state
 struct ContentView: View {
     @State private var isAuthenticated = AuthenticationService.shared.isUserAuthenticated()
+    @State private var isProfileComplete = UserDefaults.standard.bool(forKey: "isProfileComplete")
     
     var body: some View {
         Group {
             if isAuthenticated {
-                MainTabView(isAuthenticated: $isAuthenticated)
+                if isProfileComplete {
+                    MainTabView(isAuthenticated: $isAuthenticated)
+                } else {
+                    ProfileSetupView(isProfileComplete: $isProfileComplete)
+                }
             } else {
                 SignInView(isAuthenticated: $isAuthenticated)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: isAuthenticated)
+        .animation(.easeInOut(duration: 0.3), value: isProfileComplete)
+        .onChange(of: isAuthenticated) { _, newValue in
+            if newValue {
+                // Check if profile is complete when authenticated
+                isProfileComplete = UserDefaults.standard.bool(forKey: "isProfileComplete")
+            }
+        }
     }
 }
 
@@ -60,7 +72,7 @@ struct MainTabView: View {
                 }
                 .tag(2)
             
-            ProgressView()
+            ProgressTabView()
                 .tabItem {
                     Label("Progress", systemImage: "chart.bar.fill")
                 }

@@ -17,6 +17,7 @@ struct DashboardView: View {
     @State private var showingNewWorkout = false
     @State private var showingWorkoutPicker = false
     @State private var selectedWorkout: Workout?
+    @State private var isRefreshing = false
     @Namespace private var animation
     
     private var profile: UserProfile? {
@@ -60,6 +61,9 @@ struct DashboardView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 100)
+            }
+            .refreshable {
+                await refreshData()
             }
             .background(AppColors.background.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
@@ -238,6 +242,14 @@ struct DashboardView: View {
             let newProfile = UserProfile(displayName: "Player")
             modelContext.insert(newProfile)
         }
+    }
+    
+    private func refreshData() async {
+        isRefreshing = true
+        // Small delay to show refresh indicator
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        // SwiftData automatically refreshes queries, so we just need to trigger a UI update
+        isRefreshing = false
     }
 }
 

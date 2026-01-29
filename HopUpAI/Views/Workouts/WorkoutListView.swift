@@ -27,14 +27,15 @@ struct WorkoutListView: View {
     
     var body: some View {
         NavigationStack {
-            Group {
+            ZStack {
+                AppColors.background.ignoresSafeArea()
+                
                 if workouts.isEmpty {
                     emptyState
                 } else {
                     workoutList
                 }
             }
-            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Workouts")
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark, for: .navigationBar)
@@ -60,7 +61,7 @@ struct WorkoutListView: View {
     
     private var workoutList: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
+            LazyVStack(spacing: 12) {
                 ForEach(Array(filteredWorkouts.enumerated()), id: \.element.id) { index, workout in
                     NavigationLink {
                         WorkoutDetailView(workout: workout)
@@ -71,7 +72,8 @@ struct WorkoutListView: View {
                     .staggeredAppearance(index: index)
                 }
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.top, 16)
             .padding(.bottom, 100)
         }
     }
@@ -168,9 +170,9 @@ struct WorkoutRowView: View {
                 }
             }
         }
-        .padding(20)
+        .padding(16)
         .background(AppColors.court)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
 
