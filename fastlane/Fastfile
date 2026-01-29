@@ -1,0 +1,223 @@
+# Fastfile for HopUpAI
+# Documentation: https://docs.fastlane.tools
+
+default_platform(:ios)
+
+platform :ios do
+  # ==========================================
+  # SETUP
+  # ==========================================
+
+  desc "Create app on App Store Connect"
+  lane :create_app do
+    create_app_online(
+      username: "codydearkland@gmail.com",
+      app_identifier: "buildwithcode.HopUpAI",
+      app_name: "HopUp",
+      language: "English",
+      app_version: "1.0.0",
+      sku: "hopupai",
+      team_id: "6NCJTNDL43"
+    )
+  end
+
+  # ==========================================
+  # TESTING
+  # ==========================================
+
+  desc "Run all tests"
+  lane :test do
+    run_tests(
+      project: "HopUpAI.xcodeproj",
+      scheme: "HopUpAI",
+      device: "iPhone 16",
+      clean: true
+    )
+  end
+
+  # ==========================================
+  # DEPLOYMENT
+  # ==========================================
+
+  desc "Push a new beta build to TestFlight"
+  lane :beta do
+    # Increment build number
+    increment_build_number
+
+    # Build the app
+    build_app(
+      project: "HopUpAI.xcodeproj",
+      scheme: "HopUpAI"
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      skip_waiting_for_build_processing: false
+    )
+
+    # Clean up build artifacts
+    clean_build_artifacts
+
+    # Expire old TestFlight builds
+    expire_old_builds
+  end
+
+  desc "Push a new beta build without incrementing build number"
+  lane :beta_no_increment do
+    # Build the app
+    build_app(
+      project: "HopUpAI.xcodeproj",
+      scheme: "HopUpAI"
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      skip_waiting_for_build_processing: false
+    )
+
+    # Clean up build artifacts
+    clean_build_artifacts
+  end
+
+  desc "Deploy a new version to the App Store"
+  lane :release do
+    # Increment build number
+    increment_build_number
+
+    # Build the app
+    build_app(
+      project: "HopUpAI.xcodeproj",
+      scheme: "HopUpAI"
+    )
+
+    # Upload to App Store Connect
+    upload_to_app_store(
+      submit_for_review: false,
+      automatic_release: false,
+      force: true,
+      skip_screenshots: true,
+      skip_metadata: true
+    )
+
+    # Clean up build artifacts
+    clean_build_artifacts
+
+    sentry_debug_files_upload(
+      org_slug: 'buildwithcode',
+      project_slug: 'hopitup-ios',
+      include_sources: true
+    )
+  end
+
+  # ==========================================
+  # VERSION MANAGEMENT
+  # ==========================================
+
+  desc "Increment patch version (x.x.X)"
+  lane :bump_patch do
+    increment_version_number(bump_type: "patch")
+    version = get_version_number(target: "HopUpAI")
+    UI.success("Version bumped to #{version}")
+  end
+
+  desc "Increment minor version (x.X.0)"
+  lane :bump_minor do
+    increment_version_number(bump_type: "minor")
+    version = get_version_number(target: "HopUpAI")
+    UI.success("Version bumped to #{version}")
+  end
+
+  desc "Increment major version (X.0.0)"
+  lane :bump_major do
+    increment_version_number(bump_type: "major")
+    version = get_version_number(target: "HopUpAI")
+    UI.success("Version bumped to #{version}")
+  end
+
+  # ==========================================
+  # SENTRY
+  # ==========================================
+
+  desc "Upload build size analysis to Sentry"
+  lane :sentry_size do
+    build_app(
+      project: "HopUpAI.xcodeproj",
+      scheme: "HopUpAI",
+      configuration: "Release",
+      export_method: "app-store",
+      skip_codesigning: true
+    )
+
+    sentry_upload_build(
+      org_slug: "buildwithcode",
+      project_slug: "hopitup-ios",
+      build_configuration: "Release"
+    )
+  end
+
+  # ==========================================
+  # UTILITIES
+  # ==========================================
+
+  desc "Take screenshots for all devices"
+  lane :screenshots do
+    capture_screenshots(
+      project: "HopUpAI.xcodeproj",
+      scheme: "HopUpAIUITests",
+      output_directory: "./fastlane/screenshots",
+      clear_previous_screenshots: true
+    )
+  end
+
+  desc "Expire all previous TestFlight builds"
+  lane :expire_builds do
+    expire_old_builds
+  end
+
+  # ==========================================
+  # PRIVATE LANES
+  # ==========================================
+
+  private_lane :expire_old_builds do
+    require 'spaceship'
+    
+    UI.message("Expiring old TestFlight builds...")
+    
+    Spaceship::ConnectAPI.login
+    
+    app = Spaceship::ConnectAPI::App.find("buildwithcode.HopUpAI")
+    
+    if app.nil?
+      UI.error("Could not find app with bundle ID: com.codydearkland.HopUpAI")
+      next
+    end
+    
+    builds = app.get_builds(
+      filter: { expired: false, processingState: "VALID" },
+      sort: "-uploadedDate",
+      limit: 100
+    )
+    
+    # Keep the most recent build, expire the rest
+    builds_to_expire = builds.drop(1)
+    
+    builds_to_expire.each do |build|
+      begin
+        build.expire!
+        UI.success("Expired build #{build.version} (#{build.build_number})")
+      rescue => e
+        UI.error("Failed to expire build #{build.version}: #{e.message}")
+      end
+    end
+    
+    UI.success("Finished expiring #{builds_to_expire.count} old builds")
+  end
+
+  # ==========================================
+  # ERROR HANDLING
+  # ==========================================
+
+  error do |lane, exception|
+    UI.error("#{lane} failed with error: #{exception.message}")
+  end
+end
